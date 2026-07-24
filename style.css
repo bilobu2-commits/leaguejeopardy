@@ -596,6 +596,27 @@ body.master-locked .master-only {
   font-size: 0.85rem;
 }
 
+.modal-buzzer {
+  width: 100%;
+  padding-top: 12px;
+  margin-top: 4px;
+  border-top: 1px dashed var(--bronze);
+}
+
+.modal-buzzer .buzzer-result {
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+.modal-buzzer-grid {
+  gap: 8px;
+}
+
+.modal-buzzer-grid .buzzer-btn {
+  padding: 12px 8px;
+  font-size: 0.95rem;
+}
+
 @media (max-width: 900px) {
   .board { grid-template-columns: repeat(5, minmax(90px, 1fr)); overflow-x: auto; }
   .site-title { font-size: 1.6rem; }

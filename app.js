@@ -15,7 +15,9 @@
       buzzerReset: "Buzzer zurücksetzen",
       buzzerReady: "Bereit zum Buzzern",
       buzzerWinner: (name) => name + " war zuerst! 🔔",
-      noteEntered: "✎ Antwort eingegeben"
+      noteEntered: "✎ Antwort eingegeben",
+      showAll: "Für alle zeigen",
+      shownToAll: "🌐 Für alle sichtbar"
     },
     en: {
       notePlaceholder: "Enter answer…",
@@ -29,7 +31,9 @@
       buzzerReset: "Reset buzzer",
       buzzerReady: "Ready to buzz",
       buzzerWinner: (name) => name + " buzzed first! 🔔",
-      noteEntered: "✎ Answer entered"
+      noteEntered: "✎ Answer entered",
+      showAll: "Show to everyone",
+      shownToAll: "🌐 Visible to everyone"
     }
   };
   const STR = STRINGS[LANG] || STRINGS.de;
@@ -45,12 +49,18 @@
   const db = firebase.database();
   const scoresRef = db.ref("scores");
   const usedRef = db.ref("boards/" + BOARD_ID + "/used");
-  const openClueRef = db.ref("openClue");
   const buzzerRef = db.ref("buzzer/team");
+  const sharedClueRef = db.ref("sharedClue");
 
   let scores = {};
   let used = {};
-  let openClueState = null;
+  // The open question stays local to this device only by default (the
+  // gamemaster reads it out loud) — it is never written to Firebase unless
+  // the gamemaster explicitly clicks "show to everyone", which mirrors it
+  // into sharedClue for every other device to pick up.
+  let openClue = null;
+  let sharedActive = false;
+  let sharedClueState = null;
   let buzzedTeam = null;
   let buzzerReady = false;
 
@@ -70,6 +80,7 @@
   const modalQuestion = document.getElementById("modal-question");
   const modalAnswer = document.getElementById("modal-answer");
   const showAnswerBtn = document.getElementById("show-answer-btn");
+  const showAllBtn = document.getElementById("show-all-btn");
   const closeBtn = document.getElementById("close-btn");
   const scoreRow = document.getElementById("score-row");
   const modalImage = document.getElementById("modal-image");
@@ -156,8 +167,12 @@
         cell.addEventListener("click", () => {
           if (used[id]) return;
           requireMaster(() => {
-            openClueRef.set({ board: BOARD_ID, cat: catIdx, row: row, answerShown: false });
+            openClue = { cat: catIdx, row: row, answerShown: false };
+            sharedActive = false;
+            showAllBtn.textContent = STR.showAll;
+            showAllBtn.disabled = false;
             buzzerRef.set(null);
+            renderModal();
           });
         });
         boardEl.appendChild(cell);
@@ -165,21 +180,31 @@
     }
   }
 
-  // ---------- Modal (driven by shared openClue state) ----------
+  // ---------- Modal ----------
+  // Local `openClue` (set by the gamemaster clicking a tile) is authoritative
+  // on the gamemaster's own device. Everyone else only sees a question once
+  // the gamemaster explicitly shares it via sharedClue.
+  function getEffectiveClue() {
+    if (openClue) return openClue;
+    if (sharedClueState && sharedClueState.board === BOARD_ID) return sharedClueState;
+    return null;
+  }
+
   function renderModal() {
-    if (!openClueState || openClueState.board !== BOARD_ID) {
+    const effective = getEffectiveClue();
+    if (!effective) {
       overlay.classList.remove("open");
       return;
     }
 
-    const cat = BOARD_DATA.categories[openClueState.cat];
-    const clue = cat.clues[openClueState.row];
+    const cat = BOARD_DATA.categories[effective.cat];
+    const clue = cat.clues[effective.row];
 
     modalCat.textContent = cat.name;
     modalVal.textContent = clue.value;
     modalQuestion.textContent = clue.q;
     modalAnswer.textContent = clue.a;
-    modalAnswer.classList.toggle("shown", !!openClueState.answerShown);
+    modalAnswer.classList.toggle("shown", !!effective.answerShown);
 
     if (clue.tag) {
       modalTag.textContent = clue.tag;
@@ -207,11 +232,7 @@
     Object.keys(s).forEach((key) => {
       const team = s[key];
       const block = document.createElement("div");
-      block.className = "team-score-block";
-
-      const label = document.createElement("span");
-      label.textContent = team.name;
-      block.appendChild(label);
+      block.className = "team-score-block master-only";
 
       const plusBtn = document.createElement("button");
       plusBtn.className = "btn master-only";
@@ -235,16 +256,37 @@
 
   function closeClue() {
     requireMaster(() => {
-      if (!openClueState || openClueState.board !== BOARD_ID) return;
-      const id = openClueState.cat + "_" + openClueState.row;
+      if (!openClue) return;
+      const id = openClue.cat + "_" + openClue.row;
       usedRef.child(id).set(true);
-      openClueRef.set(null);
+      openClue = null;
+      if (sharedActive) {
+        sharedClueRef.set(null);
+        sharedActive = false;
+      }
       buzzerRef.set(null);
+      renderModal();
     });
   }
 
   showAnswerBtn.addEventListener("click", () => requireMaster(() => {
-    if (openClueState) openClueRef.child("answerShown").set(true);
+    if (!openClue) return;
+    openClue.answerShown = true;
+    if (sharedActive) sharedClueRef.child("answerShown").set(true);
+    renderModal();
+  }));
+
+  showAllBtn.addEventListener("click", () => requireMaster(() => {
+    if (!openClue) return;
+    sharedActive = true;
+    sharedClueRef.set({
+      board: BOARD_ID,
+      cat: openClue.cat,
+      row: openClue.row,
+      answerShown: !!openClue.answerShown
+    });
+    showAllBtn.textContent = STR.shownToAll;
+    showAllBtn.disabled = true;
   }));
 
   closeBtn.addEventListener("click", closeClue);
@@ -259,7 +301,6 @@
   const scoreboardEl = document.getElementById("scoreboard");
 
   function renderScoreboard() {
-    scoreboardEl.innerHTML = "";
     const focused = document.activeElement;
     let focusInfo = null;
     if (focused && scoreboardEl.contains(focused) && focused.dataset.team) {
@@ -271,6 +312,7 @@
       };
     }
 
+    scoreboardEl.innerHTML = "";
     const s = mergedScores();
     Object.keys(s).forEach((key) => {
       const team = s[key];
@@ -372,14 +414,16 @@
     }
   }));
 
-  // ---------- Buzzer ----------
+  // ---------- Buzzer (rendered both on the page and inside the modal) ----------
   const buzzerGrid = document.getElementById("buzzer-grid");
   const buzzerResult = document.getElementById("buzzer-result");
+  const modalBuzzerGrid = document.getElementById("modal-buzzer-grid");
+  const modalBuzzerResult = document.getElementById("modal-buzzer-result");
   const buzzerResetBtn = document.getElementById("buzzer-reset-btn");
   const buzzerSound = new Audio("Sounds/missing.mp3");
 
-  function renderBuzzer() {
-    buzzerGrid.innerHTML = "";
+  function buildBuzzerGrid(container) {
+    container.innerHTML = "";
     const s = mergedScores();
     Object.keys(s).forEach((key) => {
       const team = s[key];
@@ -398,13 +442,20 @@
         buzzerRef.transaction((cur) => (cur === null || cur === undefined ? key : cur));
       });
 
-      buzzerGrid.appendChild(btn);
+      container.appendChild(btn);
     });
+  }
 
-    const s2 = mergedScores();
-    buzzerResult.textContent = buzzedTeam !== null && s2[buzzedTeam]
-      ? STR.buzzerWinner(s2[buzzedTeam].name)
+  function renderBuzzer() {
+    buildBuzzerGrid(buzzerGrid);
+    buildBuzzerGrid(modalBuzzerGrid);
+
+    const s = mergedScores();
+    const text = buzzedTeam !== null && s[buzzedTeam]
+      ? STR.buzzerWinner(s[buzzedTeam].name)
       : STR.buzzerReady;
+    buzzerResult.textContent = text;
+    modalBuzzerResult.textContent = text;
   }
 
   buzzerResetBtn.addEventListener("click", () => requireMaster(() => {
@@ -416,7 +467,8 @@
     scores = snap.val() || {};
     renderScoreboard();
     renderBuzzer();
-    if (openClueState) renderScoreRow(BOARD_DATA.categories[openClueState.cat].clues[openClueState.row].value);
+    const effective = getEffectiveClue();
+    if (effective) renderScoreRow(BOARD_DATA.categories[effective.cat].clues[effective.row].value);
   });
 
   usedRef.on("value", (snap) => {
@@ -424,9 +476,9 @@
     renderBoard();
   });
 
-  openClueRef.on("value", (snap) => {
-    openClueState = snap.val();
-    renderModal();
+  sharedClueRef.on("value", (snap) => {
+    sharedClueState = snap.val();
+    if (!openClue) renderModal();
   });
 
   buzzerRef.on("value", (snap) => {

@@ -265,6 +265,16 @@ body.master-locked .master-only {
   background: var(--blue-darkest);
 }
 
+.clue.active-clue {
+  border-color: var(--cyan);
+  animation: active-clue-glow 1.4s ease-in-out infinite;
+}
+
+@keyframes active-clue-glow {
+  0%, 100% { box-shadow: 0 0 10px rgba(10, 200, 185, 0.5); }
+  50% { box-shadow: 0 0 26px rgba(10, 200, 185, 0.95); }
+}
+
 .clue-tag {
   position: absolute;
   top: 4px;

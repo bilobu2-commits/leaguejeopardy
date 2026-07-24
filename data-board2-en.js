@@ -7,7 +7,7 @@ const BOARD_DATA = {
       clues: [
         { value: 100, tag: null, q: "Which notorious NA streamer was the first to hit Rank 1 (Challenger) in every single role in 2019, after previously being banned by Riot?", a: "Tyler1" },
         { value: 200, tag: null, q: "Which champion was legendary Korean support player \"Madlife\" especially famous for (keyword: hooks)?", a: "Blitzcrank (also known for Thresh)" },
-        { value: 300, tag: null, q: "Which European streamer and former caster became hugely popular for his thrilling Worlds analysis and now hosts/casts major events?", a: "Caedrel" },
+        { value: 300, tag: null, q: "What was the name of the infamous streamer known for his Singed and Nasus mains?", a: "Sirchez" },
         { value: 400, tag: null, q: "What's the well-known in-game/scene name of Carlos Rodríguez Santiago?", a: "Ocelote (founder & CEO of G2 Esports)" },
         { value: 500, tag: null, q: "Who was TSM's top laner in Season 2, known for Riven and Shen?", a: "Dyrus" }
       ]
@@ -25,11 +25,11 @@ const BOARD_DATA = {
     {
       name: "Map & Objectives",
       clues: [
-        { value: 100, tag: null, q: "What's the buff/unit called that you get after killing the Rift Herald, letting you attack towers with it?", a: "Eye of the Herald" },
+        { value: 100, tag: null, q: "What do you pick up after killing the Rift Herald?", a: "The Eye of the Herald" },
         { value: 200, tag: null, q: "Since which patch/season was the early Rift Herald encounter supplemented with smaller creatures called \"Void Grubs\"?", a: "Season 2024, Patch 14.1" },
         { value: 300, tag: null, q: "What's the neutral river monster called that grants gold, healing, and brief vision of nearby enemies when killed?", a: "Scuttle Crab (Scuttler)" },
-        { value: 400, tag: "ESTIMATE", q: "How long does a destroyed inhibitor take to respawn?", a: "5 minutes" },
-        { value: 500, tag: null, q: "What are the small bonus platforms on outer towers called, which grant permanent bonus damage when they break off (since Season 2019)?", a: "Turret Plates" }
+        { value: 400, tag: null, q: "Name one of the two forms of Atakhan.", a: "Voracious Form or Ruinous Form" },
+        { value: 500, tag: "PICTURE", image: "https://i3.wp.com/streamie.com.br/wp-content/uploads/2016/11/img-pedra-filosofal-2.png?resize=700%2C483&ssl=1", q: "What item can you see at this spot on the map?", a: "Philosopher's Stone" }
       ]
     },
     {
@@ -39,7 +39,7 @@ const BOARD_DATA = {
         { value: 200, tag: "ESTIMATE", q: "What's the base movement speed of most champions (in units)?", a: "325 units (tolerance ±15)" },
         { value: 300, tag: "ESTIMATE", q: "Roughly how long does an average ranked solo/duo game last (in minutes)?", a: "Approx. 28–32 minutes (tolerance 25–35)" },
         { value: 400, tag: "PICTURE", image: "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Ahri_0.jpg", q: "Which champion is shown here, and what year did she originally come out?", a: "Ahri, 2009" },
-        { value: 500, tag: null, q: "Name the three highest ranked tiers above Diamond (ascending order).", a: "Master, Grandmaster, Challenger" }
+        { value: 500, tag: null, q: "When were role queues (guaranteed primary/secondary role) added to ranked?", a: "With the start of the 2019 ranked season (January 2019)" }
       ]
     },
     {

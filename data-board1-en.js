@@ -5,11 +5,11 @@ const BOARD_DATA = {
     {
       name: "Esports",
       clues: [
-        { value: 100, tag: null, q: "Where (city/country) was the very first Worlds final held in 2011?", a: "Jönköping, Sweden (DreamHack)" },
+        { value: 100, tag: null, q: "Which Swedish ADC player spent over a decade with Fnatic and is considered one of the best European players ever?", a: "Rekkles (Martin Larsson)" },
         { value: 200, tag: null, q: "Which European team lost the 2018 Worlds final 0–3 against Invictus Gaming?", a: "Fnatic" },
         { value: 300, tag: null, q: "Which European team won a Mid-Season Invitational (MSI) in 2019, the only EU team to do so so far?", a: "G2 Esports" },
         { value: 400, tag: null, q: "Which Danish mid laner holds the most LCS (NA) titles of all time and played for TSM for many years?", a: "Bjergsen (Søren Bjerg)" },
-        { value: 500, tag: null, q: "Which Swedish ADC player spent over a decade with Fnatic and is considered one of the best European players ever?", a: "Rekkles (Martin Larsson)" }
+        { value: 500, tag: null, q: "Where (city/country) was the very first Worlds final held in 2011?", a: "Jönköping, Sweden (DreamHack)" }
       ]
     },
     {
@@ -27,7 +27,7 @@ const BOARD_DATA = {
       clues: [
         { value: 100, tag: null, q: "Which boots upgrade increases Tenacity and is typically built against CC-heavy enemies?", a: "Mercury's Treads" },
         { value: 200, tag: "ESTIMATE", q: "How long is the cooldown of Zhonya's Hourglass's active ability (Stasis)?", a: "120 seconds (tolerance ±20)" },
-        { value: 300, tag: null, q: "What was the name of the now-removed item whose active ability, \"Cost to Win,\" dealt magic damage based on the target's maximum health?", a: "Deathfire Grasp" },
+        { value: 300, tag: "PICTURE", image: "https://static.wikia.nocookie.net/leagueoflegends/images/f/fa/Deathfire_Grasp_item_old.png/revision/latest/smart/width/250/height/250?cb=20180416102805", q: "What's the name of this item, since removed from the regular game?", a: "Deathfire Grasp" },
         { value: 400, tag: null, q: "What does the item Runaan's Hurricane do? Briefly explain the effect.", a: "Fires extra bolts at up to 2 additional nearby enemies on basic attacks (including on-hit effects) — great for wave clear and teamfights" },
         { value: 500, tag: null, q: "What does the bonus attack damage (AD) of the classic item \"Atma's Impaler\" scale with?", a: "The wearer's maximum health (1.5% of max HP as bonus AD)" }
       ]
@@ -47,9 +47,9 @@ const BOARD_DATA = {
       clues: [
         { value: 100, tag: null, q: "In which twin-city region does the story of Jinx, Vi, and the chem-barons (from \"Arcane\") take place?", a: "Piltover & Zaun" },
         { value: 200, tag: null, q: "Kayle and Morgana are a winged twin pair from Demacia. Which one is known as the \"fallen angel\"?", a: "Morgana" },
-        { value: 300, tag: null, q: "What's the home region of the Void monsters like Kha'Zix, Cho'Gath, and Kog'Maw called?", a: "Icathia" },
+        { value: 300, tag: null, q: "Which champion rides the primal beast Bristle?", a: "Sejuani" },
         { value: 400, tag: null, q: "In the original (since reworked) lore, what was the purpose of the \"League of Legends\" itself among the nations of Valoran?", a: "Conflict resolution between nations (a peaceful/political alternative to open war)" },
-        { value: 500, tag: null, q: "Which champion rides the primal beast Bristle?", a: "Sejuani" }
+        { value: 500, tag: null, q: "What's the home region of the Void monsters like Kha'Zix, Cho'Gath, and Kog'Maw called?", a: "Icathia" }
       ]
     }
   ]

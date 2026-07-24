@@ -53,13 +53,26 @@
   const usedRef = db.ref("boards/" + BOARD_ID + "/used");
   const buzzerRef = db.ref("buzzer/team");
   const sharedClueRef = db.ref("sharedClue");
+  const activeClueRef = db.ref("activeClue");
+
+  function resetTeamNotes() {
+    const updates = {};
+    Object.keys(DEFAULT_SCORES).forEach((k) => {
+      updates[k + "/note"] = "";
+      updates[k + "/noteRevealed"] = false;
+    });
+    scoresRef.update(updates);
+  }
 
   let scores = {};
   let used = {};
+  let activeClueState = null;
   // The open question stays local to this device only by default (the
   // gamemaster reads it out loud) — it is never written to Firebase unless
   // the gamemaster explicitly clicks "show to everyone", which mirrors it
-  // into sharedClue for every other device to pick up.
+  // into sharedClue for every other device to pick up. A lightweight
+  // activeClue (board/cat/row only, no question text) is always synced so
+  // team devices can see WHICH tile is open, without seeing its content.
   let openClue = null;
   let sharedActive = false;
   let sharedClueState = null;
@@ -152,8 +165,10 @@
       cats.forEach((cat, catIdx) => {
         const clue = cat.clues[row];
         const id = catIdx + "_" + row;
+        const isActive = activeClueState && activeClueState.board === BOARD_ID &&
+          activeClueState.cat === catIdx && activeClueState.row === row;
         const cell = document.createElement("div");
-        cell.className = "clue" + (used[id] ? " used" : "");
+        cell.className = "clue" + (used[id] ? " used" : "") + (isActive ? " active-clue" : "");
         cell.dataset.id = id;
 
         if (clue.tag) {
@@ -178,6 +193,7 @@
             showAllBtn.textContent = STR.showAll;
             showAllBtn.disabled = false;
             buzzerRef.set(null);
+            activeClueRef.set({ board: BOARD_ID, cat: catIdx, row: row });
             renderModal();
           });
         });
@@ -275,6 +291,8 @@
         sharedClueRef.set(null);
         sharedActive = false;
       }
+      activeClueRef.set(null);
+      resetTeamNotes();
       renderModal();
     });
   }
@@ -292,6 +310,8 @@
         sharedActive = false;
       }
       buzzerRef.set(null);
+      activeClueRef.set(null);
+      resetTeamNotes();
       renderModal();
     });
   }
@@ -508,6 +528,11 @@
   sharedClueRef.on("value", (snap) => {
     sharedClueState = snap.val();
     if (!openClue) renderModal();
+  });
+
+  activeClueRef.on("value", (snap) => {
+    activeClueState = snap.val();
+    renderBoard();
   });
 
   buzzerRef.on("value", (snap) => {

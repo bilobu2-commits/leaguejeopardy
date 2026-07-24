@@ -7,7 +7,7 @@ const BOARD_DATA = {
       clues: [
         { value: 100, tag: null, q: "Welcher berüchtigte NA-Streamer schaffte es 2019 als Erster, in jeder einzelnen Rolle Rang 1 (Challenger) zu erreichen, nachdem er zuvor von Riot gebannt worden war?", a: "Tyler1" },
         { value: 200, tag: null, q: "Für welchen Champion war der legendäre koreanische Support-Spieler „Madlife“ vor allem berühmt (Stichwort: Hooks)?", a: "Blitzcrank (auch bekannt für Thresh)" },
-        { value: 300, tag: null, q: "Welcher europäische Streamer und ehemalige Caster wurde vor allem durch seine mitreißenden Worlds-Analysen extrem populär und moderiert/kommentiert mittlerweile bei großen Events?", a: "Caedrel" },
+        { value: 300, tag: null, q: "Wie hieß der berüchtigte Streamer, bekannt für seine Singed- und Nasus-Mains?", a: "Sirchez" },
         { value: 400, tag: null, q: "Wie lautet der bekannte Ingame-/Szene-Name von Carlos Rodríguez Santiago?", a: "Ocelote (Gründer & CEO von G2 Esports)" },
         { value: 500, tag: null, q: "Wie hieß der TSM-Toplaner in Season 2, bekannt für Riven und Shen?", a: "Dyrus" }
       ]
@@ -25,11 +25,11 @@ const BOARD_DATA = {
     {
       name: "Karte & Objectives",
       clues: [
-        { value: 100, tag: null, q: "Wie heißt der Buff/die Einheit, die man nach dem Töten des Rift Herald erhält und mit der man anschließend Türme angreifen kann?", a: "Auge des Herolds (Eye of the Herald)" },
+        { value: 100, tag: null, q: "Was nimmst du auf, nachdem du den Rift Herald getötet hast?", a: "Das Auge des Herolds (Eye of the Herald)" },
         { value: 200, tag: null, q: "Seit welchem Patch/welcher Season wurde der frühe Rift-Herald-Encounter um mehrere kleinere Kreaturen namens „Void Grubs“ ergänzt?", a: "Season 2024, Patch 14.1" },
         { value: 300, tag: null, q: "Wie heißt das neutrale Fluss-Monster, das beim Töten Gold, eine Heilung und temporäre Sicht auf nahe Gegner gibt?", a: "Scuttle Crab (Scuttler)" },
-        { value: 400, tag: "SCHÄTZ", q: "Wie lange dauert es, bis ein zerstörter Inhibitor wieder hochkommt (respawnt)?", a: "5 Minuten" },
-        { value: 500, tag: null, q: "Wie heißen die kleinen Bonus-Plattformen an äußeren Türmen, die seit Season 2019 beim Beschuss abfallen und dauerhaften Zusatzschaden gewähren?", a: "Turmplatten (Turret Plates)" }
+        { value: 400, tag: null, q: "Nenne eine der beiden Formen von Atakhan.", a: "Voracious Form oder Ruinous Form" },
+        { value: 500, tag: "BILD", image: "https://i3.wp.com/streamie.com.br/wp-content/uploads/2016/11/img-pedra-filosofal-2.png?resize=700%2C483&ssl=1", q: "Welches Item ist an dieser Stelle auf der Karte zu sehen?", a: "Philosopher's Stone" }
       ]
     },
     {
@@ -39,7 +39,7 @@ const BOARD_DATA = {
         { value: 200, tag: "SCHÄTZ", q: "Wie hoch ist die Basis-Bewegungsgeschwindigkeit der meisten Champions (in Units)?", a: "325 Units (Toleranz ±15)" },
         { value: 300, tag: "SCHÄTZ", q: "Wie lange dauert eine durchschnittliche Ranked-Solo/Duo-Partie ungefähr (in Minuten)?", a: "Ca. 28–32 Minuten (Toleranz 25–35)" },
         { value: 400, tag: "BILD", image: "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Ahri_0.jpg", q: "Welcher Champion ist hier zu sehen, und in welchem Jahr kam er ursprünglich ins Spiel?", a: "Ahri, 2009" },
-        { value: 500, tag: null, q: "Nenne die drei höchsten Ranked-Tiers oberhalb von Diamond (in aufsteigender Reihenfolge).", a: "Master, Grandmaster, Challenger" }
+        { value: 500, tag: null, q: "Wann wurden feste Rollen-Warteschlangen (Role Queue: garantierte Haupt-/Nebenrolle) im Ranked-Modus eingeführt?", a: "Mit dem Start der Ranked-Saison 2019 (Januar 2019)" }
       ]
     },
     {

@@ -1,4 +1,5 @@
 const BOARD_ID = "board1";
+const UI_LANG = "de";
 const BOARD_DATA = {
   categories: [
     {

@@ -11,11 +11,24 @@
 
   <header class="site-header">
     <h1 class="site-title">League of Legends Quiz</h1>
-    <div class="site-subtitle">Board 1 von 2</div>
+    <div class="site-subtitle">Board 1 von 2 · <a href="index-en.html" style="color:var(--gold)">EN</a></div>
     <div class="divider"></div>
   </header>
 
+  <div id="master-bar" class="master-bar">
+    <label for="master-code-input">Gamemaster-Code</label>
+    <input type="password" id="master-code-input" placeholder="Code eingeben">
+    <button id="master-code-btn">Freischalten</button>
+    <span id="master-status"></span>
+  </div>
+
   <div id="board" class="board"></div>
+
+  <div class="buzzer-section">
+    <div id="buzzer-result" class="buzzer-result"></div>
+    <div id="buzzer-grid" class="buzzer-grid"></div>
+    <button id="buzzer-reset-btn" class="btn">Buzzer zurücksetzen</button>
+  </div>
 
   <div class="controls-row">
     <button id="reset-board-btn">Board zurücksetzen</button>

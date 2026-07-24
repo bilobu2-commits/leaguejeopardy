@@ -10,6 +10,7 @@ $mime = @{
   ".js"   = "application/javascript"
   ".css"  = "text/css"
   ".json" = "application/json"
+  ".mp3"  = "audio/mpeg"
 }
 
 while ($listener.IsListening) {

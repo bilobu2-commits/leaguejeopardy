@@ -1,6 +1,40 @@
 (function () {
+  const LANG = typeof UI_LANG !== "undefined" ? UI_LANG : "de";
+  const MASTER_CODE = "8526";
+
+  const STRINGS = {
+    de: {
+      notePlaceholder: "Antwort eingeben…",
+      noteReveal: "Aufdecken",
+      noteHide: "Verbergen",
+      resetBoardConfirm: "Alle Fragen dieses Boards wieder freigeben?",
+      resetScoresConfirm: "Punktestände aller Teams zurücksetzen?",
+      masterLocked: "🔒 Gesperrt",
+      masterUnlocked: "🔓 Freigeschaltet",
+      masterWrong: "Falscher Code!",
+      buzzerReset: "Buzzer zurücksetzen",
+      buzzerReady: "Bereit zum Buzzern",
+      buzzerWinner: (name) => name + " war zuerst! 🔔"
+    },
+    en: {
+      notePlaceholder: "Enter answer…",
+      noteReveal: "Reveal",
+      noteHide: "Hide",
+      resetBoardConfirm: "Reset all questions on this board?",
+      resetScoresConfirm: "Reset all teams' scores?",
+      masterLocked: "🔒 Locked",
+      masterUnlocked: "🔓 Unlocked",
+      masterWrong: "Wrong code!",
+      buzzerReset: "Reset buzzer",
+      buzzerReady: "Ready to buzz",
+      buzzerWinner: (name) => name + " buzzed first! 🔔"
+    }
+  };
+  const STR = STRINGS[LANG] || STRINGS.de;
+
   const SCORES_KEY = "lolquiz_scores";
   const usedKey = "lolquiz_used_" + BOARD_ID;
+  const MASTER_KEY = "lolquiz_master_unlocked";
 
   function loadScores() {
     try {
@@ -47,6 +81,53 @@
 
   let currentClueId = null;
   let currentValue = 0;
+
+  // ---------- Gamemaster unlock ----------
+  const masterInput = document.getElementById("master-code-input");
+  const masterBtn = document.getElementById("master-code-btn");
+  const masterStatus = document.getElementById("master-status");
+  const masterBar = document.getElementById("master-bar");
+
+  function isMasterUnlocked() {
+    return sessionStorage.getItem(MASTER_KEY) === "1";
+  }
+
+  function updateMasterUI() {
+    const unlocked = isMasterUnlocked();
+    masterStatus.textContent = unlocked ? STR.masterUnlocked : STR.masterLocked;
+    masterBar.classList.toggle("unlocked", unlocked);
+    masterInput.style.display = unlocked ? "none" : "inline-block";
+    masterBtn.style.display = unlocked ? "none" : "inline-block";
+  }
+
+  function tryUnlock() {
+    if (masterInput.value === MASTER_CODE) {
+      sessionStorage.setItem(MASTER_KEY, "1");
+      updateMasterUI();
+    } else {
+      alert(STR.masterWrong);
+    }
+    masterInput.value = "";
+  }
+
+  masterBtn.addEventListener("click", tryUnlock);
+  masterInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") tryUnlock();
+  });
+
+  function requireMaster(action) {
+    if (isMasterUnlocked()) {
+      action();
+      return;
+    }
+    masterBar.classList.remove("attention");
+    void masterBar.offsetWidth;
+    masterBar.classList.add("attention");
+    masterBar.scrollIntoView({ behavior: "smooth", block: "center" });
+    masterInput.focus();
+  }
+
+  updateMasterUI();
 
   function renderBoard() {
     boardEl.innerHTML = "";
@@ -131,13 +212,13 @@
       const plusBtn = document.createElement("button");
       plusBtn.className = "btn";
       plusBtn.textContent = "+" + currentValue;
-      plusBtn.addEventListener("click", () => adjustScore(key, currentValue));
+      plusBtn.addEventListener("click", () => requireMaster(() => adjustScore(key, currentValue)));
       block.appendChild(plusBtn);
 
       const minusBtn = document.createElement("button");
       minusBtn.className = "btn";
       minusBtn.textContent = "−" + currentValue;
-      minusBtn.addEventListener("click", () => adjustScore(key, -currentValue));
+      minusBtn.addEventListener("click", () => requireMaster(() => adjustScore(key, -currentValue)));
       block.appendChild(minusBtn);
 
       scoreRow.appendChild(block);
@@ -161,7 +242,7 @@
   }
 
   showAnswerBtn.addEventListener("click", () => {
-    modalAnswer.classList.add("shown");
+    requireMaster(() => modalAnswer.classList.add("shown"));
   });
 
   closeBtn.addEventListener("click", closeModal);
@@ -188,6 +269,7 @@
       nameInput.addEventListener("change", () => {
         scores[key].name = nameInput.value || key;
         saveScores(scores);
+        renderBuzzer();
       });
       card.appendChild(nameInput);
 
@@ -201,19 +283,19 @@
 
       const minus = document.createElement("button");
       minus.textContent = "−100";
-      minus.addEventListener("click", () => {
+      minus.addEventListener("click", () => requireMaster(() => {
         scores[key].score -= 100;
         saveScores(scores);
         renderScoreboard();
-      });
+      }));
 
       const plus = document.createElement("button");
       plus.textContent = "+100";
-      plus.addEventListener("click", () => {
+      plus.addEventListener("click", () => requireMaster(() => {
         scores[key].score += 100;
         saveScores(scores);
         renderScoreboard();
-      });
+      }));
 
       btnRow.appendChild(minus);
       btnRow.appendChild(plus);
@@ -224,7 +306,7 @@
 
       const noteInput = document.createElement("input");
       noteInput.type = "password";
-      noteInput.placeholder = "Antwort eingeben…";
+      noteInput.placeholder = STR.notePlaceholder;
       noteInput.value = team.note || "";
       noteInput.addEventListener("input", () => {
         scores[key].note = noteInput.value;
@@ -233,12 +315,12 @@
       noteWrap.appendChild(noteInput);
 
       const revealBtn = document.createElement("button");
-      revealBtn.textContent = "Aufdecken";
-      revealBtn.addEventListener("click", () => {
+      revealBtn.textContent = STR.noteReveal;
+      revealBtn.addEventListener("click", () => requireMaster(() => {
         const revealing = noteInput.type === "password";
         noteInput.type = revealing ? "text" : "password";
-        revealBtn.textContent = revealing ? "Verbergen" : "Aufdecken";
-      });
+        revealBtn.textContent = revealing ? STR.noteHide : STR.noteReveal;
+      }));
       noteWrap.appendChild(revealBtn);
 
       card.appendChild(noteWrap);
@@ -248,7 +330,7 @@
   }
 
   document.getElementById("reset-board-btn").addEventListener("click", () => {
-    if (confirm("Alle Fragen dieses Boards wieder freigeben?")) {
+    if (confirm(STR.resetBoardConfirm)) {
       used = new Set();
       saveUsed(used);
       renderBoard();
@@ -256,13 +338,55 @@
   });
 
   document.getElementById("reset-scores-btn").addEventListener("click", () => {
-    if (confirm("Punktestände aller Teams zurücksetzen?")) {
+    if (confirm(STR.resetScoresConfirm)) {
       Object.keys(scores).forEach((k) => (scores[k].score = 0));
       saveScores(scores);
       renderScoreboard();
     }
   });
 
+  // ---------- Buzzer ----------
+  const buzzerGrid = document.getElementById("buzzer-grid");
+  const buzzerResult = document.getElementById("buzzer-result");
+  const buzzerResetBtn = document.getElementById("buzzer-reset-btn");
+  const buzzerSound = new Audio("Sounds/missing.mp3");
+  let buzzedTeam = null;
+
+  function renderBuzzer() {
+    buzzerGrid.innerHTML = "";
+    Object.keys(scores).forEach((key) => {
+      const team = scores[key];
+      const btn = document.createElement("button");
+      btn.className = "buzzer-btn";
+      btn.textContent = team.name;
+
+      if (buzzedTeam === key) {
+        btn.classList.add("buzzed");
+      } else if (buzzedTeam !== null) {
+        btn.classList.add("disabled");
+        btn.disabled = true;
+      }
+
+      btn.addEventListener("click", () => {
+        if (buzzedTeam !== null) return;
+        buzzedTeam = key;
+        buzzerSound.currentTime = 0;
+        buzzerSound.play();
+        renderBuzzer();
+      });
+
+      buzzerGrid.appendChild(btn);
+    });
+
+    buzzerResult.textContent = buzzedTeam !== null ? STR.buzzerWinner(scores[buzzedTeam].name) : STR.buzzerReady;
+  }
+
+  buzzerResetBtn.addEventListener("click", () => requireMaster(() => {
+    buzzedTeam = null;
+    renderBuzzer();
+  }));
+
   renderBoard();
   renderScoreboard();
+  renderBuzzer();
 })();

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:leagueoflegends.fandom.com)",
+      "WebFetch(domain:ddragon.leagueoflegends.com)",
+      "Bash(where npx *)",
+      "Bash(where node *)"
+    ]
+  }
+}

@@ -14,7 +14,8 @@
       masterWrong: "Falscher Code!",
       buzzerReset: "Buzzer zurücksetzen",
       buzzerReady: "Bereit zum Buzzern",
-      buzzerWinner: (name) => name + " war zuerst! 🔔"
+      buzzerWinner: (name) => name + " war zuerst! 🔔",
+      noteEntered: "✎ Antwort eingegeben"
     },
     en: {
       notePlaceholder: "Enter answer…",
@@ -27,45 +28,39 @@
       masterWrong: "Wrong code!",
       buzzerReset: "Reset buzzer",
       buzzerReady: "Ready to buzz",
-      buzzerWinner: (name) => name + " buzzed first! 🔔"
+      buzzerWinner: (name) => name + " buzzed first! 🔔",
+      noteEntered: "✎ Answer entered"
     }
   };
   const STR = STRINGS[LANG] || STRINGS.de;
 
-  const SCORES_KEY = "lolquiz_scores";
-  const usedKey = "lolquiz_used_" + BOARD_ID;
   const MASTER_KEY = "lolquiz_master_unlocked";
 
-  function loadScores() {
-    try {
-      const raw = localStorage.getItem(SCORES_KEY);
-      if (raw) return JSON.parse(raw);
-    } catch (e) {}
-    return {
-      team1: { name: "Team 1", score: 0 },
-      team2: { name: "Team 2", score: 0 },
-      team3: { name: "Team 3", score: 0 }
-    };
-  }
+  const DEFAULT_SCORES = {
+    team1: { name: "Team 1", score: 0, note: "", noteRevealed: false },
+    team2: { name: "Team 2", score: 0, note: "", noteRevealed: false },
+    team3: { name: "Team 3", score: 0, note: "", noteRevealed: false }
+  };
 
-  function saveScores(scores) {
-    localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
-  }
+  const db = firebase.database();
+  const scoresRef = db.ref("scores");
+  const usedRef = db.ref("boards/" + BOARD_ID + "/used");
+  const openClueRef = db.ref("openClue");
+  const buzzerRef = db.ref("buzzer/team");
 
-  function loadUsed() {
-    try {
-      const raw = localStorage.getItem(usedKey);
-      if (raw) return new Set(JSON.parse(raw));
-    } catch (e) {}
-    return new Set();
-  }
+  let scores = {};
+  let used = {};
+  let openClueState = null;
+  let buzzedTeam = null;
+  let buzzerReady = false;
 
-  function saveUsed(used) {
-    localStorage.setItem(usedKey, JSON.stringify(Array.from(used)));
+  function mergedScores() {
+    const out = {};
+    Object.keys(DEFAULT_SCORES).forEach((key) => {
+      out[key] = Object.assign({}, DEFAULT_SCORES[key], scores[key] || {});
+    });
+    return out;
   }
-
-  let scores = loadScores();
-  let used = loadUsed();
 
   const boardEl = document.getElementById("board");
   const overlay = document.getElementById("overlay");
@@ -78,9 +73,6 @@
   const closeBtn = document.getElementById("close-btn");
   const scoreRow = document.getElementById("score-row");
   const modalImage = document.getElementById("modal-image");
-
-  let currentClueId = null;
-  let currentValue = 0;
 
   // ---------- Gamemaster unlock ----------
   const masterInput = document.getElementById("master-code-input");
@@ -98,6 +90,7 @@
     masterBar.classList.toggle("unlocked", unlocked);
     masterInput.style.display = unlocked ? "none" : "inline-block";
     masterBtn.style.display = unlocked ? "none" : "inline-block";
+    document.body.classList.toggle("master-locked", !unlocked);
   }
 
   function tryUnlock() {
@@ -129,6 +122,7 @@
 
   updateMasterUI();
 
+  // ---------- Board ----------
   function renderBoard() {
     boardEl.innerHTML = "";
     const cats = BOARD_DATA.categories;
@@ -145,7 +139,7 @@
         const clue = cat.clues[row];
         const id = catIdx + "_" + row;
         const cell = document.createElement("div");
-        cell.className = "clue" + (used.has(id) ? " used" : "");
+        cell.className = "clue" + (used[id] ? " used" : "");
         cell.dataset.id = id;
 
         if (clue.tag) {
@@ -156,27 +150,36 @@
         }
 
         const valSpan = document.createElement("span");
-        valSpan.textContent = used.has(id) ? "✓" : clue.value;
+        valSpan.textContent = used[id] ? "✓" : clue.value;
         cell.appendChild(valSpan);
 
-        cell.addEventListener("click", () => openClue(catIdx, row, id));
+        cell.addEventListener("click", () => {
+          if (used[id]) return;
+          requireMaster(() => {
+            openClueRef.set({ board: BOARD_ID, cat: catIdx, row: row, answerShown: false });
+            buzzerRef.set(null);
+          });
+        });
         boardEl.appendChild(cell);
       });
     }
   }
 
-  function openClue(catIdx, row, id) {
-    const cat = BOARD_DATA.categories[catIdx];
-    const clue = cat.clues[row];
-    currentClueId = id;
-    currentValue = clue.value;
+  // ---------- Modal (driven by shared openClue state) ----------
+  function renderModal() {
+    if (!openClueState || openClueState.board !== BOARD_ID) {
+      overlay.classList.remove("open");
+      return;
+    }
+
+    const cat = BOARD_DATA.categories[openClueState.cat];
+    const clue = cat.clues[openClueState.row];
 
     modalCat.textContent = cat.name;
     modalVal.textContent = clue.value;
     modalQuestion.textContent = clue.q;
     modalAnswer.textContent = clue.a;
-    modalAnswer.classList.remove("shown");
-    showAnswerBtn.style.display = "inline-block";
+    modalAnswer.classList.toggle("shown", !!openClueState.answerShown);
 
     if (clue.tag) {
       modalTag.textContent = clue.tag;
@@ -194,14 +197,15 @@
       modalImage.style.display = "none";
     }
 
-    renderScoreRow();
+    renderScoreRow(clue.value);
     overlay.classList.add("open");
   }
 
-  function renderScoreRow() {
+  function renderScoreRow(value) {
     scoreRow.innerHTML = "";
-    Object.keys(scores).forEach((key) => {
-      const team = scores[key];
+    const s = mergedScores();
+    Object.keys(s).forEach((key) => {
+      const team = s[key];
       const block = document.createElement("div");
       block.className = "team-score-block";
 
@@ -210,47 +214,45 @@
       block.appendChild(label);
 
       const plusBtn = document.createElement("button");
-      plusBtn.className = "btn";
-      plusBtn.textContent = "+" + currentValue;
-      plusBtn.addEventListener("click", () => requireMaster(() => adjustScore(key, currentValue)));
+      plusBtn.className = "btn master-only";
+      plusBtn.textContent = "+" + value;
+      plusBtn.addEventListener("click", () => requireMaster(() => {
+        scoresRef.child(key).child("score").transaction((cur) => (cur || 0) + value);
+      }));
       block.appendChild(plusBtn);
 
       const minusBtn = document.createElement("button");
-      minusBtn.className = "btn";
-      minusBtn.textContent = "−" + currentValue;
-      minusBtn.addEventListener("click", () => requireMaster(() => adjustScore(key, -currentValue)));
+      minusBtn.className = "btn master-only";
+      minusBtn.textContent = "−" + value;
+      minusBtn.addEventListener("click", () => requireMaster(() => {
+        scoresRef.child(key).child("score").transaction((cur) => (cur || 0) - value);
+      }));
       block.appendChild(minusBtn);
 
       scoreRow.appendChild(block);
     });
   }
 
-  function adjustScore(teamKey, delta) {
-    scores[teamKey].score += delta;
-    saveScores(scores);
-    renderScoreboard();
+  function closeClue() {
+    requireMaster(() => {
+      if (!openClueState || openClueState.board !== BOARD_ID) return;
+      const id = openClueState.cat + "_" + openClueState.row;
+      usedRef.child(id).set(true);
+      openClueRef.set(null);
+      buzzerRef.set(null);
+    });
   }
 
-  function closeModal() {
-    overlay.classList.remove("open");
-    if (currentClueId !== null) {
-      used.add(currentClueId);
-      saveUsed(used);
-      renderBoard();
-    }
-    currentClueId = null;
-  }
+  showAnswerBtn.addEventListener("click", () => requireMaster(() => {
+    if (openClueState) openClueRef.child("answerShown").set(true);
+  }));
 
-  showAnswerBtn.addEventListener("click", () => {
-    requireMaster(() => modalAnswer.classList.add("shown"));
-  });
-
-  closeBtn.addEventListener("click", closeModal);
+  closeBtn.addEventListener("click", closeClue);
   overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) closeModal();
+    if (e.target === overlay) closeClue();
   });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && overlay.classList.contains("open")) closeModal();
+    if (e.key === "Escape" && overlay.classList.contains("open")) closeClue();
   });
 
   // ---------- Scoreboard ----------
@@ -258,18 +260,30 @@
 
   function renderScoreboard() {
     scoreboardEl.innerHTML = "";
-    Object.keys(scores).forEach((key) => {
-      const team = scores[key];
+    const focused = document.activeElement;
+    let focusInfo = null;
+    if (focused && scoreboardEl.contains(focused) && focused.dataset.team) {
+      focusInfo = {
+        team: focused.dataset.team,
+        field: focused.dataset.field,
+        selStart: focused.selectionStart,
+        selEnd: focused.selectionEnd
+      };
+    }
+
+    const s = mergedScores();
+    Object.keys(s).forEach((key) => {
+      const team = s[key];
       const card = document.createElement("div");
       card.className = "team-card";
 
       const nameInput = document.createElement("input");
       nameInput.className = "team-name";
       nameInput.value = team.name;
+      nameInput.dataset.team = key;
+      nameInput.dataset.field = "name";
       nameInput.addEventListener("change", () => {
-        scores[key].name = nameInput.value || key;
-        saveScores(scores);
-        renderBuzzer();
+        scoresRef.child(key).child("name").set(nameInput.value || key);
       });
       card.appendChild(nameInput);
 
@@ -282,19 +296,17 @@
       btnRow.className = "team-buttons";
 
       const minus = document.createElement("button");
+      minus.className = "master-only";
       minus.textContent = "−100";
       minus.addEventListener("click", () => requireMaster(() => {
-        scores[key].score -= 100;
-        saveScores(scores);
-        renderScoreboard();
+        scoresRef.child(key).child("score").transaction((cur) => (cur || 0) - 100);
       }));
 
       const plus = document.createElement("button");
+      plus.className = "master-only";
       plus.textContent = "+100";
       plus.addEventListener("click", () => requireMaster(() => {
-        scores[key].score += 100;
-        saveScores(scores);
-        renderScoreboard();
+        scoresRef.child(key).child("score").transaction((cur) => (cur || 0) + 100);
       }));
 
       btnRow.appendChild(minus);
@@ -305,21 +317,28 @@
       noteWrap.className = "team-note";
 
       const noteInput = document.createElement("input");
-      noteInput.type = "password";
+      noteInput.type = team.noteRevealed ? "text" : "password";
       noteInput.placeholder = STR.notePlaceholder;
       noteInput.value = team.note || "";
+      noteInput.dataset.team = key;
+      noteInput.dataset.field = "note";
       noteInput.addEventListener("input", () => {
-        scores[key].note = noteInput.value;
-        saveScores(scores);
+        scoresRef.child(key).update({ note: noteInput.value, noteRevealed: false });
       });
       noteWrap.appendChild(noteInput);
 
+      if (!team.noteRevealed && team.note) {
+        const hint = document.createElement("span");
+        hint.className = "note-hint";
+        hint.textContent = STR.noteEntered;
+        noteWrap.appendChild(hint);
+      }
+
       const revealBtn = document.createElement("button");
-      revealBtn.textContent = STR.noteReveal;
+      revealBtn.className = "master-only";
+      revealBtn.textContent = team.noteRevealed ? STR.noteHide : STR.noteReveal;
       revealBtn.addEventListener("click", () => requireMaster(() => {
-        const revealing = noteInput.type === "password";
-        noteInput.type = revealing ? "text" : "password";
-        revealBtn.textContent = revealing ? STR.noteHide : STR.noteReveal;
+        scoresRef.child(key).child("noteRevealed").transaction((cur) => !cur);
       }));
       noteWrap.appendChild(revealBtn);
 
@@ -327,35 +346,43 @@
 
       scoreboardEl.appendChild(card);
     });
+
+    if (focusInfo) {
+      const el = scoreboardEl.querySelector(
+        '[data-team="' + focusInfo.team + '"][data-field="' + focusInfo.field + '"]'
+      );
+      if (el) {
+        el.focus();
+        if (typeof el.setSelectionRange === "function" && focusInfo.selStart != null) {
+          el.setSelectionRange(focusInfo.selStart, focusInfo.selEnd);
+        }
+      }
+    }
   }
 
-  document.getElementById("reset-board-btn").addEventListener("click", () => {
-    if (confirm(STR.resetBoardConfirm)) {
-      used = new Set();
-      saveUsed(used);
-      renderBoard();
-    }
-  });
+  document.getElementById("reset-board-btn").addEventListener("click", () => requireMaster(() => {
+    if (confirm(STR.resetBoardConfirm)) usedRef.set(null);
+  }));
 
-  document.getElementById("reset-scores-btn").addEventListener("click", () => {
+  document.getElementById("reset-scores-btn").addEventListener("click", () => requireMaster(() => {
     if (confirm(STR.resetScoresConfirm)) {
-      Object.keys(scores).forEach((k) => (scores[k].score = 0));
-      saveScores(scores);
-      renderScoreboard();
+      const updates = {};
+      Object.keys(DEFAULT_SCORES).forEach((k) => (updates[k + "/score"] = 0));
+      scoresRef.update(updates);
     }
-  });
+  }));
 
   // ---------- Buzzer ----------
   const buzzerGrid = document.getElementById("buzzer-grid");
   const buzzerResult = document.getElementById("buzzer-result");
   const buzzerResetBtn = document.getElementById("buzzer-reset-btn");
   const buzzerSound = new Audio("Sounds/missing.mp3");
-  let buzzedTeam = null;
 
   function renderBuzzer() {
     buzzerGrid.innerHTML = "";
-    Object.keys(scores).forEach((key) => {
-      const team = scores[key];
+    const s = mergedScores();
+    Object.keys(s).forEach((key) => {
+      const team = s[key];
       const btn = document.createElement("button");
       btn.className = "buzzer-btn";
       btn.textContent = team.name;
@@ -368,23 +395,50 @@
       }
 
       btn.addEventListener("click", () => {
-        if (buzzedTeam !== null) return;
-        buzzedTeam = key;
-        buzzerSound.currentTime = 0;
-        buzzerSound.play();
-        renderBuzzer();
+        buzzerRef.transaction((cur) => (cur === null || cur === undefined ? key : cur));
       });
 
       buzzerGrid.appendChild(btn);
     });
 
-    buzzerResult.textContent = buzzedTeam !== null ? STR.buzzerWinner(scores[buzzedTeam].name) : STR.buzzerReady;
+    const s2 = mergedScores();
+    buzzerResult.textContent = buzzedTeam !== null && s2[buzzedTeam]
+      ? STR.buzzerWinner(s2[buzzedTeam].name)
+      : STR.buzzerReady;
   }
 
   buzzerResetBtn.addEventListener("click", () => requireMaster(() => {
-    buzzedTeam = null;
-    renderBuzzer();
+    buzzerRef.set(null);
   }));
+
+  // ---------- Firebase live listeners ----------
+  scoresRef.on("value", (snap) => {
+    scores = snap.val() || {};
+    renderScoreboard();
+    renderBuzzer();
+    if (openClueState) renderScoreRow(BOARD_DATA.categories[openClueState.cat].clues[openClueState.row].value);
+  });
+
+  usedRef.on("value", (snap) => {
+    used = snap.val() || {};
+    renderBoard();
+  });
+
+  openClueRef.on("value", (snap) => {
+    openClueState = snap.val();
+    renderModal();
+  });
+
+  buzzerRef.on("value", (snap) => {
+    const newVal = snap.val() || null;
+    if (buzzerReady && newVal && !buzzedTeam) {
+      buzzerSound.currentTime = 0;
+      buzzerSound.play().catch(() => {});
+    }
+    buzzedTeam = newVal;
+    buzzerReady = true;
+    renderBuzzer();
+  });
 
   renderBoard();
   renderScoreboard();

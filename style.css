@@ -65,6 +65,10 @@ html, body {
   opacity: 0.8;
 }
 
+body.master-locked .master-only {
+  display: none !important;
+}
+
 /* ---------- Gamemaster bar ---------- */
 .master-bar {
   max-width: 640px;
@@ -468,7 +472,16 @@ html, body {
 .team-note {
   margin-top: 10px;
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
+  align-items: center;
+}
+
+.note-hint {
+  flex-basis: 100%;
+  font-size: 0.7rem;
+  color: var(--cyan);
+  text-align: center;
 }
 
 .team-note input {

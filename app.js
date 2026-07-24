@@ -17,7 +17,8 @@
       buzzerWinner: (name) => name + " war zuerst! 🔔",
       noteEntered: "✎ Antwort eingegeben",
       showAll: "Für alle zeigen",
-      shownToAll: "🌐 Für alle sichtbar"
+      shownToAll: "🌐 Für alle sichtbar",
+      finishQuestion: "Frage abschließen"
     },
     en: {
       notePlaceholder: "Enter answer…",
@@ -33,7 +34,8 @@
       buzzerWinner: (name) => name + " buzzed first! 🔔",
       noteEntered: "✎ Answer entered",
       showAll: "Show to everyone",
-      shownToAll: "🌐 Visible to everyone"
+      shownToAll: "🌐 Visible to everyone",
+      finishQuestion: "Finish question"
     }
   };
   const STR = STRINGS[LANG] || STRINGS.de;
@@ -81,6 +83,7 @@
   const modalAnswer = document.getElementById("modal-answer");
   const showAnswerBtn = document.getElementById("show-answer-btn");
   const showAllBtn = document.getElementById("show-all-btn");
+  const finishBtn = document.getElementById("finish-btn");
   const closeBtn = document.getElementById("close-btn");
   const scoreRow = document.getElementById("score-row");
   const modalImage = document.getElementById("modal-image");
@@ -165,8 +168,11 @@
         cell.appendChild(valSpan);
 
         cell.addEventListener("click", () => {
-          if (used[id]) return;
           requireMaster(() => {
+            if (used[id]) {
+              usedRef.child(id).remove();
+              return;
+            }
             openClue = { cat: catIdx, row: row, answerShown: false };
             sharedActive = false;
             showAllBtn.textContent = STR.showAll;
@@ -234,11 +240,16 @@
       const block = document.createElement("div");
       block.className = "team-score-block master-only";
 
+      const label = document.createElement("span");
+      label.textContent = team.name;
+      block.appendChild(label);
+
       const plusBtn = document.createElement("button");
       plusBtn.className = "btn master-only";
       plusBtn.textContent = "+" + value;
       plusBtn.addEventListener("click", () => requireMaster(() => {
         scoresRef.child(key).child("score").transaction((cur) => (cur || 0) + value);
+        finishClue();
       }));
       block.appendChild(plusBtn);
 
@@ -247,6 +258,7 @@
       minusBtn.textContent = "−" + value;
       minusBtn.addEventListener("click", () => requireMaster(() => {
         scoresRef.child(key).child("score").transaction((cur) => (cur || 0) - value);
+        finishClue();
       }));
       block.appendChild(minusBtn);
 
@@ -254,7 +266,22 @@
     });
   }
 
-  function closeClue() {
+  // Close = just hide the modal, nothing is marked as used.
+  function hideModal() {
+    requireMaster(() => {
+      if (!openClue) return;
+      openClue = null;
+      if (sharedActive) {
+        sharedClueRef.set(null);
+        sharedActive = false;
+      }
+      renderModal();
+    });
+  }
+
+  // Finish = mark the clue as used for everyone and close it. Triggered by
+  // the "finish question" button or automatically when points are awarded.
+  function finishClue() {
     requireMaster(() => {
       if (!openClue) return;
       const id = openClue.cat + "_" + openClue.row;
@@ -289,12 +316,13 @@
     showAllBtn.disabled = true;
   }));
 
-  closeBtn.addEventListener("click", closeClue);
+  finishBtn.addEventListener("click", finishClue);
+  closeBtn.addEventListener("click", hideModal);
   overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) closeClue();
+    if (e.target === overlay) hideModal();
   });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && overlay.classList.contains("open")) closeClue();
+    if (e.key === "Escape" && overlay.classList.contains("open")) hideModal();
   });
 
   // ---------- Scoreboard ----------

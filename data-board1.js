@@ -27,7 +27,7 @@ const BOARD_DATA = {
       clues: [
         { value: 100, tag: null, q: "Welches Boots-Upgrade erhöht die Widerstandsfähigkeit gegen Crowd Control (Tenacity) und wird gerne gegen CC-lastige Gegner gebaut?", a: "Mercury's Treads" },
         { value: 200, tag: "SCHÄTZ", q: "Wie lange ist der Cooldown der aktiven Fähigkeit (Stasis) von Zhonya's Hourglass?", a: "120 Sekunden (Toleranz ±20)" },
-        { value: 300, tag: "BILD", q: "Wie heißt dieses inzwischen aus dem regulären Spiel entfernte Item?", a: "Deathfire Grasp" },
+        { value: 300, tag: null, q: "Wie hieß das inzwischen aus dem Spiel entfernte Item mit der aktiven Fähigkeit „Cost to Win“, die anteiligen Magieschaden basierend auf dem maximalen Leben des Ziels verursachte?", a: "Deathfire Grasp" },
         { value: 400, tag: null, q: "Was macht das Item Runaan's Hurricane? Erkläre kurz die Fähigkeit.", a: "Feuert bei normalen Angriffen zusätzliche Pfeile auf bis zu 2 weitere nahe Gegner ab (inkl. On-Hit-Effekten) — ideal für Wellenclear und Teamfights" },
         { value: 500, tag: null, q: "Womit skaliert der Bonus-Angriffsschaden (AD) des klassischen Items „Atma's Impaler“ (Atmas Pfähler)?", a: "Mit dem maximalen Leben (Health) des Trägers (1,5 % des Max-HP als Bonus-AD)" }
       ]

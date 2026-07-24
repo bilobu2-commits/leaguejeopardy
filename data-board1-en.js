@@ -27,7 +27,7 @@ const BOARD_DATA = {
       clues: [
         { value: 100, tag: null, q: "Which boots upgrade increases Tenacity and is typically built against CC-heavy enemies?", a: "Mercury's Treads" },
         { value: 200, tag: "ESTIMATE", q: "How long is the cooldown of Zhonya's Hourglass's active ability (Stasis)?", a: "120 seconds (tolerance ±20)" },
-        { value: 300, tag: "PICTURE", q: "What's the name of this item, since removed from the regular game?", a: "Deathfire Grasp" },
+        { value: 300, tag: null, q: "What was the name of the now-removed item whose active ability, \"Cost to Win,\" dealt magic damage based on the target's maximum health?", a: "Deathfire Grasp" },
         { value: 400, tag: null, q: "What does the item Runaan's Hurricane do? Briefly explain the effect.", a: "Fires extra bolts at up to 2 additional nearby enemies on basic attacks (including on-hit effects) — great for wave clear and teamfights" },
         { value: 500, tag: null, q: "What does the bonus attack damage (AD) of the classic item \"Atma's Impaler\" scale with?", a: "The wearer's maximum health (1.5% of max HP as bonus AD)" }
       ]

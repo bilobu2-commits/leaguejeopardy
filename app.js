@@ -449,6 +449,7 @@
   const modalBuzzerResult = document.getElementById("modal-buzzer-result");
   const buzzerResetBtn = document.getElementById("buzzer-reset-btn");
   const buzzerSound = new Audio("Sounds/missing.mp3");
+  buzzerSound.volume = 0.5;
 
   function buildBuzzerGrid(container) {
     container.innerHTML = "";
@@ -511,7 +512,11 @@
 
   buzzerRef.on("value", (snap) => {
     const newVal = snap.val() || null;
-    if (buzzerReady && newVal && !buzzedTeam) {
+    // Only the gamemaster's own device plays the sound — otherwise every
+    // team's phone in the same room blasts it at once, which is loud and
+    // sounds like it's firing multiple times.
+    if (buzzerReady && newVal && !buzzedTeam && isMasterUnlocked()) {
+      buzzerSound.pause();
       buzzerSound.currentTime = 0;
       buzzerSound.play().catch(() => {});
     }

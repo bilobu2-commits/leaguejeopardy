@@ -266,7 +266,6 @@
       plusBtn.textContent = "+" + value;
       plusBtn.addEventListener("click", () => requireMaster(() => {
         scoresRef.child(key).child("score").transaction((cur) => (cur || 0) + value);
-        finishClue();
       }));
       block.appendChild(plusBtn);
 
@@ -275,7 +274,6 @@
       minusBtn.textContent = "−" + value;
       minusBtn.addEventListener("click", () => requireMaster(() => {
         scoresRef.child(key).child("score").transaction((cur) => (cur || 0) - value);
-        finishClue();
       }));
       block.appendChild(minusBtn);
 
@@ -469,6 +467,7 @@
   const modalBuzzerGrid = document.getElementById("modal-buzzer-grid");
   const modalBuzzerResult = document.getElementById("modal-buzzer-result");
   const buzzerResetBtn = document.getElementById("buzzer-reset-btn");
+  const modalBuzzerResetBtn = document.getElementById("modal-buzzer-reset-btn");
   const buzzerSound = new Audio("Sounds/missing.mp3");
   buzzerSound.volume = 0.5;
 
@@ -509,6 +508,9 @@
   }
 
   buzzerResetBtn.addEventListener("click", () => requireMaster(() => {
+    buzzerRef.set(null);
+  }));
+  modalBuzzerResetBtn.addEventListener("click", () => requireMaster(() => {
     buzzerRef.set(null);
   }));
 

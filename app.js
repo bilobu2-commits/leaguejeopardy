@@ -43,9 +43,10 @@
   const MASTER_KEY = "lolquiz_master_unlocked";
 
   const DEFAULT_SCORES = {
-    team1: { name: "Team 1", score: 0, note: "", noteRevealed: false },
-    team2: { name: "Team 2", score: 0, note: "", noteRevealed: false },
-    team3: { name: "Team 3", score: 0, note: "", noteRevealed: false }
+    team1: { name: "Stega", score: 0, note: "", noteRevealed: false },
+    team2: { name: "Wega", score: 0, note: "", noteRevealed: false },
+    team3: { name: "Klaus", score: 0, note: "", noteRevealed: false },
+    team4: { name: "Michl", score: 0, note: "", noteRevealed: false }
   };
 
   const db = firebase.database();

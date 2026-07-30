@@ -336,6 +336,20 @@ body.master-locked .master-only {
   border-radius: 8px;
   padding: 12px 14px;
   text-align: center;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.team-card.team-turn,
+.team-score-block.team-turn {
+  border-color: var(--cyan);
+  box-shadow: 0 0 16px rgba(10, 200, 185, 0.7);
+}
+
+.team-score-block.team-turn {
+  border-radius: 6px;
+  padding: 4px 8px;
+  border-width: 1px;
+  border-style: solid;
 }
 
 .team-name {

@@ -251,11 +251,12 @@
 
   function renderScoreRow(value) {
     scoreRow.innerHTML = "";
+    const penalty = 600 - value;
     const s = mergedScores();
     Object.keys(s).forEach((key) => {
       const team = s[key];
       const block = document.createElement("div");
-      block.className = "team-score-block master-only";
+      block.className = "team-score-block master-only" + (buzzedTeam === key ? " team-turn" : "");
 
       const label = document.createElement("span");
       label.textContent = team.name;
@@ -271,9 +272,9 @@
 
       const minusBtn = document.createElement("button");
       minusBtn.className = "btn master-only";
-      minusBtn.textContent = "−" + value;
+      minusBtn.textContent = "−" + penalty;
       minusBtn.addEventListener("click", () => requireMaster(() => {
-        scoresRef.child(key).child("score").transaction((cur) => (cur || 0) - value);
+        scoresRef.child(key).child("score").transaction((cur) => (cur || 0) - penalty);
       }));
       block.appendChild(minusBtn);
 
@@ -281,7 +282,8 @@
     });
   }
 
-  // Close = just hide the modal, nothing is marked as used.
+  // Close = just hide the modal, nothing is marked as used and team inputs
+  // are left untouched (only finishing a question resets them).
   function hideModal() {
     requireMaster(() => {
       if (!openClue) return;
@@ -291,7 +293,6 @@
         sharedActive = false;
       }
       activeClueRef.set(null);
-      resetTeamNotes();
       renderModal();
     });
   }
@@ -364,7 +365,7 @@
     Object.keys(s).forEach((key) => {
       const team = s[key];
       const card = document.createElement("div");
-      card.className = "team-card";
+      card.className = "team-card" + (buzzedTeam === key ? " team-turn" : "");
 
       const nameInput = document.createElement("input");
       nameInput.className = "team-name";
@@ -551,6 +552,9 @@
     buzzedTeam = newVal;
     buzzerReady = true;
     renderBuzzer();
+    renderScoreboard();
+    const effective = getEffectiveClue();
+    if (effective) renderScoreRow(BOARD_DATA.categories[effective.cat].clues[effective.row].value);
   });
 
   renderBoard();
